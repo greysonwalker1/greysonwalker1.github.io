@@ -1,0 +1,198 @@
+/* General Reset */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif; /* Updated font family */
+    background-color: #121212; /* Dark gray background */
+    color: #f3b87a; /* Peach text color */
+    min-height: 100vh;
+}
+
+/* Full-width container */
+.app-container {
+    width: 100%;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    border-radius: 0;
+    box-sizing: border-box;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px 20px;
+    background: #1e1e1e; /* Slightly lighter gray for contrast */
+    border-radius: 10px;
+    color: #f3b87a; /* Peach text color */
+}
+
+.header h1 {
+    font-size: 2rem;
+    margin: 0;
+    color: #f3b87a; /* Ensure header text aligns with theme */
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+}
+
+.search-bar input {
+    padding: 10px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    outline: none;
+    margin-right: 10px;
+    width: 200px;
+    background: #1e1e1e; /* Match header background */
+    color: #f3b87a; /* Peach input text */
+    box-shadow: 0 2px 5px rgba(95, 95, 95, 0.2);
+}
+
+.search-bar input::placeholder {
+    color: #f3b87a; /* Consistent placeholder color */
+}
+
+.search-bar button {
+    padding: 10px 15px;
+    font-size: 1rem;
+    background-color: #f3b87a; /* Peach background */
+    color: #121212; /* Dark text for contrast */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.search-bar button:hover {
+    background-color: #ffe4c1; /* Lighter peach for hover effect */
+}
+
+/* Current Weather */
+.current-weather {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+#temperature {
+    font-size: 6rem;
+    margin: 0;
+    color: #f3b87a; /* Peach text */
+}
+
+#condition {
+    font-size: 2rem;
+    margin: 10px 0;
+    color: #f3b87a;
+}
+
+#location, #date {
+    font-size: 1.2rem;
+    color: #f3b87a;
+}
+
+/* 7-Day Forecast */
+.forecast h3 {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    color: #f3b87a;
+}
+
+#daily-forecast {
+    display: flex;
+    justify-content: space-between;
+    overflow-x: auto;
+    gap: 20px;
+    padding: 10px;
+}
+
+.forecast-day {
+    background: #1e1e1e; /* Match header background for consistency */
+    border-radius: 10px;
+    text-align: center;
+    padding: 15px;
+    flex: 1;
+    max-width: 150px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease; /* Smooth transition for the transform property */
+}
+
+.forecast-day:hover {
+    transform: translateY(-10px); /* Move the element up by 10 pixels on hover */
+}
+
+.forecast-day img {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 10px;
+}
+
+/* Temperature Chart */
+.chart-section {
+    margin: 30px auto; /* Centers the chart horizontally */
+    background: #1e1e1e; /* Slightly lighter than the main background */
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 900px;
+    width: 90%; /* Ensures it adjusts to smaller screens while maintaining a consistent width */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+canvas {
+    width: 100%;
+    height: 400px;
+}
+
+/* Search Results Dropdown */
+.search-results {
+    position: absolute;
+    background: #1e1e1e; /* Match header background */
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1000;
+    color: #f3b87a;
+}
+
+.search-results ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.search-results li {
+    padding: 10px;
+    cursor: pointer;
+    color: #f3b87a;
+}
+
+.search-results li:hover {
+    background-color: #2e2e2e; /* Slight highlight for hover */
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .header h1 {
+        font-size: 1.5rem;
+    }
+
+    .search-bar input {
+        width: 150px;
+    }
+
+    #temperature {
+        font-size: 4rem;
+    }
+
+    #condition {
+        font-size: 1.5rem;
+    }
+}

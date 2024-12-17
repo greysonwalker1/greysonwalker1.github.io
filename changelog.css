@@ -1,0 +1,53 @@
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+        background-color: #121212; /* Dark background */
+        color: #f3b87a; /* Text color */
+        min-height: 100vh; /* Ensure full viewport height */
+        display: flex;
+        flex-direction: column; /* Stack content vertically */
+    }
+
+    #changelogContainer {
+        max-width: 800px;
+        width: 100%;
+        background: #1e1e1e; /* Slightly lighter dark background for contrast */
+        color: #f3b87a; /* Keep the text consistent */
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Subtle shadow for elevation */
+        margin: auto; /* Center horizontally and vertically if possible */
+        flex-grow: 1; /* Push the footer down when content is small */
+        overflow-y: auto; /* Allow scrolling inside the container if needed */
+    }
+
+    h1 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        color: #f3b87a; /* Heading color */
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5); /* Subtle glow effect */
+    }
+
+    p {
+        margin: 10px 0;
+        color: #f3b87a; /* Text color */
+    }
+
+    .divider {
+        margin: 20px 0;
+        border-bottom: 2px dashed #f3b87a; /* Divider matches theme */
+    }
+
+    a {
+        color: #f3b87a; /* Link color */
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+        color: #ffe4c1; /* Lighter hover effect for better accessibility */
+    }

@@ -1,0 +1,47 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast</title>
+    <link rel="stylesheet" href="forecast.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Weather8™</h1>
+            <div class="search-container">
+                <div class="search-bar">
+                    <input type="text" id="location-input" placeholder="Enter city name">
+                    <button id="search-button">Search</button>
+                </div>
+                <div id="search-results" class="search-results"></div>
+            </div>
+        </header>
+
+        <!-- Current Weather -->
+        <section class="current-weather">
+            <h2 id="temperature">73°</h2>
+            <p id="condition">Sunny</p>
+            <p id="location">Austin, TX</p>
+            <p id="date">Thursday 1:27 PM</p>
+        </section>
+
+        <!-- 7-Day Forecast -->
+        <section class="forecast">
+            <h3>7-Day Forecast</h3>
+            <div id="daily-forecast"></div>
+        </section>
+
+        <!-- Temperature Chart -->
+        <section class="chart-section">
+            <canvas id="temp-chart"></canvas>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="forecast.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+/* General Reset */
+body, html {
+    margin: 0;
+    padding: 0;
+    background-color: #121212; /* Dark gray background */
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif; /* Updated font */
+}
+
+/* Hero Section */
+.hero {
+    background: url('weather-bg.jpg') no-repeat center center/cover;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #f3b87a; /* Peach text for contrast */
+    text-align: center;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin: 0;
+    color: #f3b87a; /* Peach for header text */
+}
+
+.hero p {
+    font-size: 1.5rem;
+    margin: 10px 0;
+    color: #f3b87a; /* Match overall theme */
+}
+
+.cta-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    background: #f3b87a; /* Peach background */
+    color: #121212; /* Dark text for contrast */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+    text-decoration: none; /* Removes underline */
+    display: inline-block; /* Ensures it behaves like a button */
+}
+
+.cta-button:hover {
+    background: #ffe4c1; /* Lighter peach for hover */
+}
+
+/* About Section */
+.about-section {
+    padding: 40px;
+    background: #1e1e1e; /* Dark gray background */
+    text-align: center;
+    color: #f3b87a; /* Peach text */
+}
+
+.about-section h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #f3b87a; /* Ensure headers match theme */
+}
+
+.about-section ul {
+    list-style: none;
+    padding: 0;
+    color: #f3b87a; /* Text aligns with theme */
+}
+
+.about-section ul li {
+    margin: 10px 0;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 20px;
+    background: #2e2e2e; /* Slightly lighter than #121212 */
+    color: #f3b87a; /* Peach text for visibility */
+    font-size: 0.9rem;
+}
+
+.footer .social-links a {
+    margin: 0 10px;
+    color: #f3b87a; /* Peach links */
+    font-size: 1.2rem;
+    transition: color 0.3s;
+}
+
+.footer .social-links a:hover {
+    color: #ffe4c1; /* Lighter peach for hover */
+}
