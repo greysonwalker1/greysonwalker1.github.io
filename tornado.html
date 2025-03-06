@@ -3,27 +3,560 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather Tracker</title>
-    <link rel="stylesheet" href="tornado.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Kentucky Tornado Simulation</title>
+    <link rel="stylesheet" href="forecast.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            z-index: 1000;
+            max-width: 400px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            z-index: 1000;
+            max-width: 300px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .lightning-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2000;
+            transition: opacity 200ms;
+        }
+        .warning {
+            color: #ff4444;
+            font-weight: bold;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        .ef-scale {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ff3333;
+        }
+        .lifecycle-phase {
+            font-weight: bold;
+            color: #ffd700;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-    <div id="app">
-        <div class="container">
-            <div id="map"></div>
-            <div id="sidebar">
-                <h2>Weather Data</h2>
-                <p id="weather-info">Loading weather data...</p>
-                <h2>Tornado Risk</h2>
-                <p id="tornado-risk">Analyzing...</p>
-            </div>
+    <div id="map"></div>
+    <div class="info-panel">
+        <h2>Tornado Warning</h2>
+        <div id="storm-details"></div>
+    </div>
+    <div class="legend">
+        <h3>Map Legend</h3>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #d63031"></div>
+            <div>EF4 Tornado (166-200 mph winds)</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ff0000"></div>
+            <div>Touchdown Point</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #4a90e2"></div>
+            <div>Supercell Thunderstorms</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ff0000; opacity: 0.6"></div>
+            <div>Tornado Path</div>
         </div>
     </div>
-    <script src="tornado.js"></script>
+    <div class="lightning-flash"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize map centered on Kentucky with closer zoom
+        const map = L.map('map').setView([37.8393, -86.2728], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Storm lifecycle phases with more detailed transitions
+        const lifecyclePhases = [
+            'Wall Cloud Formation',
+            'Funnel Cloud Development',
+            'Initial Touchdown',
+            'Rapid Intensification',
+            'Mature Stage',
+            'Peak Intensity',
+            'Initial Weakening',
+            'Rope Stage',
+            'Dissipating'
+        ];
+        let currentPhase = 0;
+        let phaseTimer = 0;
+        const PHASE_DURATION = 45; // seconds per phase
+
+        // Enhanced atmospheric conditions
+        const atmosphere = {
+            temperature: 82, // °F
+            dewPoint: 72,
+            relativeHumidity: 85,
+            pressureMb: 985,
+            capeBulk: 3500, // J/kg
+            windShear: 65, // knots
+            stormMotion: 25, // knots
+            helicity: 450, // m²/s²
+            getInstability() {
+                return (this.temperature - this.dewPoint) * (this.capeBulk / 2000);
+            }
+        };
+
+        // Tornado and storm system data with more realistic parameters
+        const tornado = {
+            position: [37.8393, -86.2728],
+            intensity: 0.7,
+            efRating: 4,
+            speed: 45,
+            direction: 45,
+            touchdownPoint: [37.8393, -86.2728],
+            path: [],
+            rotation: {
+                speed: 150, // mph
+                diameter: 0.4, // miles
+                pressure: 925 // mb
+            },
+            lifecycle: {
+                phase: lifecyclePhases[0],
+                age: 0,
+                maxAge: 180 // seconds
+            },
+            characteristics: {
+                multiVortex: false,
+                debrisCloud: false,
+                condensationFunnel: true
+            }
+        };
+
+        // More detailed thunderstorm data with dynamic behavior
+        const thunderstorms = [
+            { 
+                position: [37.8593, -86.2928], 
+                intensity: 0.8,
+                type: 'Inflow Feeder',
+                baseHeight: '2,000 ft',
+                topHeight: '40,000 ft',
+                precipitation: 'Heavy',
+                hail: '2.5"',
+                description: 'Powerful supercell feeding warm, moist air directly into the tornado. Producing baseball-sized hail and intense lightning.',
+                windSpeed: 65, // mph
+                behavior: {
+                    inflow: 60, // mph
+                    updraft: 85, // mph
+                    rotation: 45, // mph
+                    tilt: 'NE',
+                    vorticity: 0.8
+                },
+                evolution: {
+                    stage: 'Intensifying',
+                    trend: 'Strengthening',
+                    nextPhase: 'Peak'
+                }
+            },
+            { 
+                position: [37.8193, -86.2528], 
+                intensity: 0.9,
+                type: 'Rear Flank Downdraft',
+                baseHeight: '1,500 ft',
+                topHeight: '45,000 ft',
+                precipitation: 'Extreme',
+                hail: '1.75"',
+                description: 'Strong downdraft wrapping around the tornado, intensifying rotation. Contains golf ball-sized hail and severe straight-line winds.',
+                windSpeed: 75,
+                behavior: {
+                    outflow: 70, // mph
+                    downdraft: 65, // mph
+                    rotation: 35, // mph
+                    tilt: 'SW',
+                    vorticity: 0.6
+                },
+                evolution: {
+                    stage: 'Mature',
+                    trend: 'Steady',
+                    nextPhase: 'Occlusion'
+                }
+            },
+            { 
+                position: [37.8493, -86.2428], 
+                intensity: 0.7,
+                type: 'Forward Flank',
+                baseHeight: '2,500 ft',
+                topHeight: '35,000 ft',
+                precipitation: 'Heavy',
+                hail: '1"',
+                description: 'Leading edge of the storm system with intense updrafts. Producing quarter-sized hail and contributing to mesocyclone rotation.',
+                windSpeed: 55,
+                behavior: {
+                    inflow: 45, // mph
+                    updraft: 55, // mph
+                    rotation: 25, // mph
+                    tilt: 'E',
+                    vorticity: 0.4
+                },
+                evolution: {
+                    stage: 'Developing',
+                    trend: 'Intensifying',
+                    nextPhase: 'Mature'
+                }
+            }
+        ];
+
+        // Enhanced color scheme for different intensities
+        const getEFColor = (rating) => {
+            const colors = {
+                0: '#45aaf2',
+                1: '#4a90e2',
+                2: '#8854d0',
+                3: '#eb3b5a',
+                4: '#d63031',
+                5: '#6c0404'
+            };
+            return colors[rating] || colors[0];
+        };
+
+        // Create storm visualizations
+        const tornadoCircle = L.circle(tornado.position, {
+            radius: 800,
+            color: getEFColor(tornado.efRating),
+            fillColor: getEFColor(tornado.efRating),
+            fillOpacity: 0.6,
+            weight: 2
+        }).addTo(map);
+
+        const touchdownMarker = L.circle(tornado.touchdownPoint, {
+            radius: 200,
+            color: '#ff0000',
+            fillColor: '#ff0000',
+            fillOpacity: 0.8
+        }).addTo(map);
+
+        const pathLine = L.polyline([], {
+            color: '#ff0000',
+            weight: 2,
+            opacity: 0.6
+        }).addTo(map);
+
+        // Create thunderstorm visualizations with enhanced popups
+        const stormCircles = thunderstorms.map(storm => {
+            const circle = L.circle(storm.position, {
+                radius: storm.intensity * 3000,
+                color: '#4a90e2',
+                fillColor: '#4a90e2',
+                fillOpacity: 0.3
+            }).addTo(map);
+
+            circle.bindPopup(`
+                <div style="min-width: 250px">
+                    <strong style="font-size: 1.1em; color: #4a90e2">${storm.type}</strong>
+                    <hr style="margin: 5px 0">
+                    <p style="margin: 5px 0"><strong>Stage:</strong> ${storm.evolution.stage}</p>
+                    <p style="margin: 5px 0"><strong>Trend:</strong> ${storm.evolution.trend}</p>
+                    <p style="margin: 5px 0"><strong>Cloud Base:</strong> ${storm.baseHeight}</p>
+                    <p style="margin: 5px 0"><strong>Cloud Top:</strong> ${storm.topHeight}</p>
+                    <p style="margin: 5px 0"><strong>Precipitation:</strong> ${storm.precipitation}</p>
+                    <p style="margin: 5px 0"><strong>Hail Size:</strong> ${storm.hail}</p>
+                    <p style="margin: 5px 0"><strong>Wind Speed:</strong> ${storm.windSpeed} mph</p>
+                    <hr style="margin: 5px 0">
+                    <p style="margin: 5px 0"><strong>Behavior:</strong></p>
+                    <ul style="margin: 5px 0; padding-left: 20px">
+                        <li>Inflow/Outflow: ${storm.behavior.inflow || storm.behavior.outflow} mph</li>
+                        <li>Updraft/Downdraft: ${storm.behavior.updraft || storm.behavior.downdraft} mph</li>
+                        <li>Rotation: ${storm.behavior.rotation} mph</li>
+                        <li>Storm Tilt: ${storm.behavior.tilt}</li>
+                    </ul>
+                    <hr style="margin: 5px 0">
+                    <p style="margin: 5px 0">${storm.description}</p>
+                </div>
+            `);
+
+            return circle;
+        });
+
+        // Enhanced storm lifecycle with more realistic behavior
+        function updateStormLifecycle() {
+            phaseTimer++;
+            tornado.lifecycle.age++;
+
+            if (phaseTimer >= PHASE_DURATION) {
+                phaseTimer = 0;
+                currentPhase = Math.min(currentPhase + 1, lifecyclePhases.length - 1);
+                tornado.lifecycle.phase = lifecyclePhases[currentPhase];
+
+                // Update storm characteristics based on phase
+                switch (tornado.lifecycle.phase) {
+                    case 'Wall Cloud Formation':
+                        tornado.characteristics.condensationFunnel = false;
+                        tornado.characteristics.debrisCloud = false;
+                        tornado.rotation.speed = 70;
+                        break;
+                    case 'Funnel Cloud Development':
+                        tornado.characteristics.condensationFunnel = true;
+                        tornado.rotation.speed = 100;
+                        break;
+                    case 'Initial Touchdown':
+                        tornado.characteristics.debrisCloud = true;
+                        tornado.rotation.speed = 130;
+                        break;
+                    case 'Rapid Intensification':
+                        tornado.characteristics.multiVortex = Math.random() > 0.5;
+                        tornado.rotation.speed = 150;
+                        break;
+                    case 'Mature Stage':
+                    case 'Peak Intensity':
+                        tornado.characteristics.multiVortex = Math.random() > 0.3;
+                        tornado.rotation.speed = 180;
+                        break;
+                    case 'Initial Weakening':
+                        tornado.characteristics.multiVortex = false;
+                        tornado.rotation.speed = 130;
+                        break;
+                    case 'Rope Stage':
+                        tornado.characteristics.debrisCloud = false;
+                        tornado.rotation.speed = 90;
+                        break;
+                    case 'Dissipating':
+                        tornado.characteristics.condensationFunnel = false;
+                        tornado.rotation.speed = 45;
+                        break;
+                }
+            }
+
+            // Calculate target intensity based on phase and atmospheric conditions
+            let targetIntensity;
+            const atmosphericInfluence = atmosphere.getInstability() / 5000;
+            
+            switch (tornado.lifecycle.phase) {
+                case 'Wall Cloud Formation':
+                    targetIntensity = 0.3 + (phaseTimer / PHASE_DURATION) * 0.2;
+                    break;
+                case 'Funnel Cloud Development':
+                    targetIntensity = 0.5 + (phaseTimer / PHASE_DURATION) * 0.2;
+                    break;
+                case 'Initial Touchdown':
+                    targetIntensity = 0.7 + (phaseTimer / PHASE_DURATION) * 0.2;
+                    break;
+                case 'Rapid Intensification':
+                    targetIntensity = 0.9 + (phaseTimer / PHASE_DURATION) * 0.1;
+                    break;
+                case 'Mature Stage':
+                case 'Peak Intensity':
+                    targetIntensity = 1.0;
+                    break;
+                case 'Initial Weakening':
+                    targetIntensity = 0.8 - (phaseTimer / PHASE_DURATION) * 0.2;
+                    break;
+                case 'Rope Stage':
+                    targetIntensity = 0.6 - (phaseTimer / PHASE_DURATION) * 0.3;
+                    break;
+                case 'Dissipating':
+                    targetIntensity = 0.3 - (phaseTimer / PHASE_DURATION) * 0.3;
+                    break;
+            }
+
+            // Smooth intensity transitions
+            tornado.intensity = tornado.intensity * 0.8 + (targetIntensity * atmosphericInfluence) * 0.2;
+            tornado.speed = 25 + (tornado.intensity * 20); // More realistic ground speed
+        }
+
+        // Enhanced info panel updates
+        function updateStormInfo() {
+            const details = document.getElementById('storm-details');
+            const windSpeed = Math.round(tornado.rotation.speed);
+            
+            details.innerHTML = `
+                <div class="ef-scale">EF${tornado.efRating} Tornado</div>
+                <div class="lifecycle-phase">Phase: ${tornado.lifecycle.phase}</div>
+                <div style="margin: 15px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 4px;">
+                    <div style="font-size: 0.9em; color: #fff;">
+                        <p>Rotation Speed: ${windSpeed} mph</p>
+                        <p>Ground Speed: ${Math.round(tornado.speed)} mph</p>
+                        <p>Intensity: ${(tornado.intensity * 100).toFixed(0)}%</p>
+                        <p>Diameter: ${(tornado.rotation.diameter * (0.8 + tornado.intensity * 0.4)).toFixed(2)} miles</p>
+                        <p>Central Pressure: ${Math.round(tornado.rotation.pressure - (tornado.intensity * 40))} mb</p>
+                        <p>Location: ${tornado.position[0].toFixed(4)}, ${tornado.position[1].toFixed(4)}</p>
+                        <p>Path Length: ${(tornado.path.length * 0.1).toFixed(1)} miles</p>
+                        <p>Time Active: ${Math.floor(tornado.lifecycle.age)} seconds</p>
+                        ${tornado.characteristics.multiVortex ? '<p>⚠️ Multiple Vortices Detected</p>' : ''}
+                        ${tornado.characteristics.debrisCloud ? '<p>⚠️ Large Debris Cloud Present</p>' : ''}
+                    </div>
+                </div>
+                ${tornado.lifecycle.phase !== 'Dissipating' ? `
+                    <div class="warning">
+                        ⚠️ TORNADO EMERGENCY
+                        <br>CATASTROPHIC DAMAGE LIKELY
+                        <br>SEEK UNDERGROUND SHELTER IMMEDIATELY
+                    </div>
+                ` : `
+                    <div style="color: #ffd700; margin-top: 10px; padding: 8px;">
+                        Tornado is weakening and dissipating
+                    </div>
+                `}
+            `;
+        }
+
+        // Enhanced storm movement with more natural behavior
+        function moveStorm() {
+            updateStormLifecycle();
+
+            if (tornado.lifecycle.phase !== 'Dissipating') {
+                tornado.path.push([...tornado.position]);
+                pathLine.setLatLngs(tornado.path);
+
+                // Calculate movement based on mesocyclone rotation and atmospheric conditions
+                const baseDirection = tornado.direction * (Math.PI / 180);
+                const windShearInfluence = (atmosphere.windShear / 100) * Math.sin(tornado.lifecycle.age / 10);
+                const stormMotionInfluence = (atmosphere.stormMotion / 50) * Math.cos(tornado.lifecycle.age / 15);
+                
+                // Add natural oscillation and meandering
+                const oscillation = Math.sin(tornado.lifecycle.age / 8) * 0.3;
+                const meandering = Math.cos(tornado.lifecycle.age / 12) * 0.2;
+
+                // Combine all movement factors
+                const effectiveDirection = baseDirection + windShearInfluence + oscillation + meandering;
+                const movementSpeed = (tornado.speed / 3600) * 0.003; // Convert mph to coordinate units
+
+                tornado.position[0] += Math.cos(effectiveDirection) * movementSpeed * (1 + stormMotionInfluence);
+                tornado.position[1] += Math.sin(effectiveDirection) * movementSpeed * (1 + stormMotionInfluence);
+                
+                // Update tornado direction more naturally
+                tornado.direction += (Math.random() - 0.5) * 5 * (1 - tornado.intensity);
+
+                tornadoCircle.setLatLng(tornado.position);
+                tornadoCircle.setRadius(tornado.intensity * 800);
+
+                // Update thunderstorms with more realistic behavior
+                thunderstorms.forEach((storm, index) => {
+                    // Calculate individual storm evolution
+                    const stormPhase = storm.evolution.stage;
+                    const phaseFactor = stormPhase === 'Intensifying' ? 1.1 : 
+                                      stormPhase === 'Mature' ? 1.0 : 0.9;
+
+                    // Update intensity based on position relative to tornado
+                    const distanceToTornado = Math.sqrt(
+                        Math.pow(storm.position[0] - tornado.position[0], 2) +
+                        Math.pow(storm.position[1] - tornado.position[1], 2)
+                    );
+
+                    // Intensity influenced by distance and phase
+                    storm.intensity = Math.max(0.4, Math.min(0.9,
+                        storm.intensity * phaseFactor +
+                        (Math.random() - 0.5) * 0.1 -
+                        (distanceToTornado * 0.1)
+                    ));
+
+                    // Update storm position relative to tornado with more natural movement
+                    const stormAngle = Math.atan2(
+                        storm.position[1] - tornado.position[1],
+                        storm.position[0] - tornado.position[0]
+                    );
+
+                    const rotationSpeed = (storm.behavior.rotation / 100) * 0.002;
+                    const orbitRadius = 0.003 * (1 + Math.sin(tornado.lifecycle.age / 10) * 0.2);
+
+                    storm.position[0] = tornado.position[0] + Math.cos(stormAngle + rotationSpeed) * orbitRadius;
+                    storm.position[1] = tornado.position[1] + Math.sin(stormAngle + rotationSpeed) * orbitRadius;
+
+                    // Update storm characteristics
+                    storm.windSpeed = 45 + (storm.intensity * 30);
+                    storm.behavior.vorticity = Math.min(1, storm.behavior.vorticity * phaseFactor);
+                    
+                    // Update visual representation
+                    stormCircles[index].setLatLng(storm.position);
+                    stormCircles[index].setRadius(storm.intensity * 3000);
+
+                    // Update storm evolution
+                    if (Math.random() < 0.05) {
+                        if (storm.evolution.stage === 'Developing') {
+                            storm.evolution.stage = 'Intensifying';
+                            storm.evolution.trend = 'Strengthening';
+                        } else if (storm.evolution.stage === 'Intensifying' && Math.random() < 0.3) {
+                            storm.evolution.stage = 'Mature';
+                            storm.evolution.trend = 'Steady';
+                        }
+                    }
+                });
+            }
+
+            updateStormInfo();
+        }
+
+        // Enhanced lightning effect based on storm intensity
+        function triggerLightning() {
+            if (tornado.lifecycle.phase !== 'Dissipating') {
+                const stormIntensity = Math.max(...thunderstorms.map(s => s.intensity));
+                const lightningProbability = 0.7 + (stormIntensity * 0.2);
+                
+                if (Math.random() > lightningProbability) {
+                    const flash = document.querySelector('.lightning-flash');
+                    flash.style.opacity = Math.min(0.3 + (stormIntensity * 0.2), 0.5);
+                    setTimeout(() => {
+                        flash.style.opacity = '0';
+                    }, 200);
+                }
+            }
+        }
+
+        // Animation loop with realistic timing
+        setInterval(() => {
+            moveStorm();
+            triggerLightning();
+        }, 1000);
+
+        // Initial info update
+        updateStormInfo();
+    </script>
 </body>
+</html>
 <div class="navbar">
     <ul class="nav-list">
         <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
@@ -32,4 +565,3 @@
         <li class="nav-item"><a href="tornado.html" class="nav-link">Tracker</a></li>
     </ul>
 </div>
-</html>
