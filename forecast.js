@@ -20,12 +20,18 @@ function displayCurrentWeather(data) {
     const current = data.current;
     document.getElementById('temperature').textContent = `${Math.round(current.temp)}°`;
     document.getElementById('condition').textContent = capitalizeWords(current.weather[0].description);
-    document.getElementById('location').textContent = `${data.timezone}`;
-    document.getElementById('date').textContent = new Date().toLocaleString('en-US', {
+    document.getElementById('location').textContent = `${data.timezone.replace(/_/g, ' ')}`; // Format timezone name (e.g., "America/Chicago")
+
+    // Get city's local time using the timezone from OpenWeatherMap
+    const localTime = new Date().toLocaleString('en-US', {
+        timeZone: data.timezone, // Use the API's timezone string
         weekday: 'long',
         hour: '2-digit',
         minute: '2-digit',
+        hour12: true
     });
+
+    document.getElementById('date').textContent = localTime;
 }
 
 function displayDailyForecast(daily) {
@@ -179,3 +185,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+{const utcOffsetHours = data.timezone_offset / 3600; // Convert seconds to hours
+    document.getElementById('date').textContent = `${localTime} (UTC${utcOffsetHours >= 0 ? '+' : ''}${utcOffsetHours})`;}
+{function updateCityTime(timezone) {
+    setInterval(() => {
+        const localTime = new Date().toLocaleString('en-US', {
+            timeZone: timezone,
+            weekday: 'long',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+        document.getElementById('date').textContent = localTime;
+    }, 1000);
+}
+
+// Call this in displayCurrentWeather():
+updateCityTime(data.timezone);}
