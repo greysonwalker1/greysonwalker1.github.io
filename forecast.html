@@ -59,3 +59,25 @@
         <li class="nav-item"><a href="tornado.html" class="nav-link">Tracker</a></li>
     </ul>
 </div>
+<div id="settings-panel" class="settings-panel">
+    <h3>Settings</h3>
+    <div class="settings-group">
+        <label>Temperature Unit:</label>
+        <select id="temperature-unit">
+            <option value="imperial">°F</option>
+            <option value="metric">°C</option>
+        </select>
+    </div>
+    <div class="settings-group">
+        <label>Time Format:</label>
+        <select id="time-format">
+            <option value="12">12-hour</option>
+            <option value="24">24-hour</option>
+        </select>
+    </div>
+    <div class="settings-group">
+        <label>Show Seconds:</label>
+        <input type="checkbox" id="show-seconds">
+    </div>
+    <button id="close-settings">Close</button>
+</div>
